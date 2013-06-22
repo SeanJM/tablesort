@@ -1,0 +1,68 @@
+@import url(http://fonts.googleapis.com/css?family=Roboto:400,300,700);
+
+* {
+  box-sizing         : border-box;
+  -moz-box-sizing    : border-box;
+  -webkit-box-sizing : border-box;
+  font-family        : Roboto, Arial, Helvetica, Sans-serif;
+}
+
+body {
+  background : #f0f0f0;
+  padding    : 10px 30px 20px;
+}
+
+h1 {
+  font-size: 18px;
+}
+
+p {
+  margin-top    : 0;
+  margin-bottom : 6px;
+  font-size     : 13px;
+  font-weight   : 300;
+  color         : #595959;
+}
+
+a {
+  text-decoration    : none;
+  color              : rgb(0,155,194);
+  -webkit-transition : color 0.2s;
+  -moz-transition    : color 0.2s;
+  -ms-transition     : color 0.2s;
+  -o-transition      : color 0.2s;
+  transition         : color 0.2s;
+}
+
+a:hover {
+  color: rgb(83, 192, 235);
+}
+
+code, code * {
+  font-size   : 13px;
+  font-family : monospace;
+}
+
+code {
+  display       : block;
+  margin-bottom : 10px;
+  padding       : 10px;
+  color         : rgb(172,172,172);
+  background    : rgb(46,46,46);
+}
+
+/* Keyword */
+code .value,
+code .keyword {
+  color: #f30084;
+}
+
+code .tag,
+code .string {
+  color: #8BC9D5;
+}
+
+code .attribute,
+code .params {
+  color: #fff;
+}
