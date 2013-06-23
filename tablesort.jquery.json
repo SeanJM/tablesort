@@ -22,7 +22,8 @@
     ],
     "licenses": [
         {
-            "type": "MIT"
+            "type": "MIT",
+            "url": "http://opensource.org/licenses/MIT"
         }
     ],
     "bugs": "https://github.com/SeanJM/tablesort/issues",
