@@ -1,0 +1,35 @@
+{
+    "name": "tablesort",
+    "title": "Table sort",
+    "description": "jQuery plugin for adding column sorting and searching to tables.",
+    "keywords": [
+        "table",
+        "tables",
+        "sorting",
+        "searching"
+    ],
+    "version": "1.0",
+    "author": {
+        "name": "Sean J MacIsaac",
+        "url": "https://github.com/SeanJM/tablesort"
+    },
+    "maintainers": [
+        {
+            "name": "Sean J MacIsaac",
+            "email": "seanjmacisaac@gmail.com",
+            "url": "http://www.seanjmacisaac.com/"
+        }
+    ],
+    "licenses": [
+        {
+            "type": "MIT"
+        }
+    ],
+    "bugs": "https://github.com/SeanJM/tablesort/issues",
+    "homepage": "https://github.com/SeanJM/tablesort",
+    "docs": "http://www.seanjmacisaac.com/projects/code/tablesort/",
+    "download": "https://github.com/SeanJM/tablesort/blob/master/tablesort.js",
+    "dependencies": {
+        "jquery": ">=1.9"
+    }
+}
