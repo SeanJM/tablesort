@@ -8,7 +8,7 @@
         "sorting",
         "searching"
     ],
-    "version": "1.0",
+    "version": "1.0.0",
     "author": {
         "name": "Sean J MacIsaac",
         "url": "https://github.com/SeanJM/tablesort"
