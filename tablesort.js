@@ -31,14 +31,20 @@
     },
 
     setup: function(table) {
+      var tableSortContainer = $('<div class="table-sort-container"></div>');
+      var scroll             = $('<div class="scrollbar-chrome"><div class="scrollbar-track"><div class="scrollbar-container"><div class="scrollbar"></div></div></div></div>');
+      var scrollbar          = scroll.find('.scrollbar-container');
+      var scrolltrack        = scroll.find('.scrollbar-track');
+      var scrollbarWidth;
       // Make TH tags not selectable
-      function userSelectNone(el) {
+      function userSelect(el,attr) {
         arr = ['webkit','moz','ms'];
         for (var i=0;i<arr.length;i++) {
-          el.css('-'+arr[i]+'-user-select','none');
+          el.css('-'+arr[i]+'-user-select',attr);
         };
-        el.css('user-select','none');
+        el.css('user-select',attr);
       };
+
       // Add the sorting buttons to the TH elements
       function format(th) {
         var sortField   = $('<div class="table-sort-field"></div>');
@@ -53,7 +59,7 @@
         sortControl.appendTo(sortField);
         th.contents().replaceWith(sortField).end();
 
-        userSelectNone(th);
+        userSelect(th,'none');
       };
       // Generate a new clean row based on an array
       function newRow(arr) {
@@ -68,6 +74,7 @@
       function newBody(arg) {
         var body = $('<div></div>');
         for (var i=0;i<arg.sortArr.length;i++) {
+          console.log(arg.sortArr[i]);
           var tr = newRow(arg.rowArr[arg.sortArr[i]]);
           body.append(tr);
         };
@@ -83,11 +90,11 @@
       };
       function bindTh(th) {
         th.on('click',function () {
-          var sortArr = [];
-          var rowArr  = {};
-          var obj     = {};
-          var index   = $(this).index();
-          var tr      = (table.hasClass('table-sort-search')) ? table.find('tbody tr:gt(0)') : table.find('tbody tr');
+          var sortArr     = [];
+          var rowArr      = {};
+          var obj         = {};
+          var index       = $(this).index();
+          var tr          = (table.hasClass('table-sort-search')) ? table.find('tbody tr:gt(0)') : table.find('tbody tr');
           var sortOrder;
 
           // Determine Sort Order
@@ -99,7 +106,7 @@
             sortOrder = 'asc';
           }
           tr.each(function () {
-            var text     = $(this).find('td:eq('+index+')').text();
+            var text     = $(this).find('td:eq('+index+')').text()+'_'+$(this).index();
             rowArr[text] = [];
             sortArr.push(text);
             $(this).find('td').each(function () {
@@ -125,39 +132,53 @@
           });
         });
       }
+      function scrollTable(scrollPos) {
+        var percentage = scrollPos/(scrolltrack.width()-scrollbar.width());
+        var difference = tableSortContainer.width()-table.width();
+        table.css('left',difference*percentage);
+        scrollbar.css('left',percentage*(scrolltrack.width()-scrollbar.width()));
+      }
       function setUpScroll() {
         var width              = table.width();
         var parentWidth        = table.parent().width();
-        var tableSortContainer = $('<div class="table-sort-container"></div>');
-        var scroll             = $('<div class="scrollbar-chrome"><div class="scrollbar-track"><div class="scrollbar-container"><div class="scrollbar"></div></div></div></div>');
-        var scrollbar          = scroll.find('.scrollbar-container');
-        var scrolltrack        = scroll.find('.scrollbar-track');
-        var scrollbarWidth;
+        var scrollPos,initMousePos,newMousePos;
 
-        function initScroll() {
-          tableSortContainer.append(scroll);
-          table.css('width',width+'px');
-          scrolltrack.css('position','relative');
-          scrollbar.css('position','absolute');
-
+        function scrollWidth() {
           // Determine the width of the scrollbar
           scrollbarWidth = parentWidth/width*scrolltrack.width();
           scrollbar.css('width',scrollbarWidth+'px');
+        }
+
+
+        function initScroll() {
+          var fun;
+          tableSortContainer.append(scroll);
+          table.css('position','relative').css('width',width+'px');
+          scrolltrack.css('position','relative');
+          scrollbar.css('position','absolute');
+
+          scrollWidth();
 
           scrollbar.off('mousedown');
           scrolltrack.on('mousedown',function (e) {
-            var initMousePost = e.pageX-scrolltrack.offset().left;
-            console.log(initMousePost);
-            scrolltrack.on('mousemove',function () {
-
+            initMousePos = e.pageX-scrolltrack.offset().left;
+            $('html').on('mousemove',function (e) {
+              newMousePos = e.pageX-scrolltrack.offset().left;
+              scrollPos = newMousePos-initMousePos;
+              if (scrollPos < 0) scrollPos = 0;
+              if (scrollPos+scrollbar.width() > scrolltrack.width()) scrollPos = scrolltrack.width()-scrollbar.width();
+              scrollTable(scrollPos);
             });
+            userSelect(tableSortContainer,'none');
           });
-          scrolltrack.off('mouseup');
-          scrolltrack.on('mouseup',function () {
-            scrolltrack.off('mousemove');
+          $('html').off('mouseup');
+          $('html').on('mouseup',function () {
+            $('html').off('mousemove');
+            userSelect(tableSortContainer,'all');
           });
         }
 
+        /* Puts the table into the tableSortContainer */
         tableSortContainer
           .insertBefore(table)
           .css('width',parentWidth+'px')
@@ -168,6 +189,15 @@
         if (width > parentWidth) {
           initScroll();
         }
+
+        $(window).on('resize',function () {
+          tableSortContainer.css('width',tableSortContainer.parent().width()+'px');
+          scrollWidth();
+          var scrollbarPos = (scrollbar.css('left') === 'auto') ? -1 : parseInt(scrollbar.css('left'));
+          if (scrollbarPos >= 0) {
+            scrollTable(scrollbarPos);
+          }
+        });
       }
       // Go through each table heading and apply sorting if the heading is sortable
       table.find('th').each(function () {
@@ -178,10 +208,13 @@
           bindTh(th);
         }
       });
+
       table.find('td').each(function () {
         $(this).css('white-space','nowrap');
       });
+
       setUpScroll();
+
     },
 
     search: function (table, options) {
