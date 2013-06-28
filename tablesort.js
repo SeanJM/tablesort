@@ -101,7 +101,7 @@
             sortOrder = 'asc';
           }
           tr.each(function () {
-            var text     = $(this).find('td:eq('+index+')').text();
+            var text     = $(this).find('td:eq('+index+')').text()+'_'+$(this).index();
             rowArr[text] = [];
             sortArr.push(text);
             $(this).find('td').each(function () {
