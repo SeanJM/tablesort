@@ -13,10 +13,10 @@
 
   // The actual plugin constructor
   function Plugin( element, options ) {
-    this.element = element;
-    this.options = $.extend( {}, defaults, options );
+    this.element   = element;
+    this.options   = $.extend( {}, defaults, options );
     this._defaults = defaults;
-    this._name = pluginName;
+    this._name     = pluginName;
 
     this.init();
   }
@@ -24,13 +24,13 @@
   Plugin.prototype = {
 
     init: function() {
-      this.search(this.element,this.options);
-      this.scanTh(this.element,this.options);
-      this.count(this.element);
+      var table = $(this.element)
+      this.setup(table);
+      this.search(table);
+      this.count(table);
     },
 
-    scanTh: function(table, options) {
-      table = $(table);
+    setup: function(table) {
       // Make TH tags not selectable
       function userSelectNone(el) {
         arr = ['webkit','moz','ms'];
@@ -59,7 +59,8 @@
       function newRow(arr) {
         var row = $('<tr></tr>');
         for (var i=0;i<arr.length;i++) {
-          row.append('<td>'+arr[i]+'</td>');
+          var td = $('<td>'+arr[i]+'</td>').css('white-space','nowrap');
+          row.append(td);
         };
         return row;
       };
@@ -80,10 +81,7 @@
           $(this).removeClass('table-sort-order-des');
         });
       };
-      // Go through each table heading and apply sorting if the heading is sortable
-      table.find('th.table-sort').each(function () {
-        var th = $(this);
-        format(th);
+      function bindTh(th) {
         th.on('click',function () {
           var sortArr = [];
           var rowArr  = {};
@@ -126,7 +124,64 @@
             rowArr: rowArr
           });
         });
+      }
+      function setUpScroll() {
+        var width              = table.width();
+        var parentWidth        = table.parent().width();
+        var tableSortContainer = $('<div class="table-sort-container"></div>');
+        var scroll             = $('<div class="scrollbar-chrome"><div class="scrollbar-track"><div class="scrollbar-container"><div class="scrollbar"></div></div></div></div>');
+        var scrollbar          = scroll.find('.scrollbar-container');
+        var scrolltrack        = scroll.find('.scrollbar-track');
+        var scrollbarWidth;
+
+        function initScroll() {
+          tableSortContainer.append(scroll);
+          table.css('width',width+'px');
+          scrolltrack.css('position','relative');
+          scrollbar.css('position','absolute');
+
+          // Determine the width of the scrollbar
+          scrollbarWidth = parentWidth/width*scrolltrack.width();
+          scrollbar.css('width',scrollbarWidth+'px');
+
+          scrollbar.off('mousedown');
+          scrolltrack.on('mousedown',function (e) {
+            var initMousePost = e.pageX-scrolltrack.offset().left;
+            console.log(initMousePost);
+            scrolltrack.on('mousemove',function () {
+
+            });
+          });
+          scrolltrack.off('mouseup');
+          scrolltrack.on('mouseup',function () {
+            scrolltrack.off('mousemove');
+          });
+        }
+
+        tableSortContainer
+          .insertBefore(table)
+          .css('width',parentWidth+'px')
+          .css('overflow','hidden')
+          .css('position','relative');
+        table.appendTo(tableSortContainer);
+
+        if (width > parentWidth) {
+          initScroll();
+        }
+      }
+      // Go through each table heading and apply sorting if the heading is sortable
+      table.find('th').each(function () {
+        var th = $(this);
+        th.css('white-space','nowrap');
+        if ($(this).hasClass('table-sort')) {
+          format(th);
+          bindTh(th);
+        }
       });
+      table.find('td').each(function () {
+        $(this).css('white-space','nowrap');
+      });
+      setUpScroll();
     },
 
     search: function (table, options) {
@@ -154,11 +209,25 @@
       }
       table = $(table);
       if (table.hasClass('table-sort-search')) {
-        var colspan     = table.find('thead th').size();
-        var search      = $('<tr><td class="table-sort-search-container" colspan='+colspan+'></td></tr>');
-        var searchInput = $('<input class="table-sort-search-input" type="text" placeholder="Search...">');
-        search.find('td').append(searchInput);
-        table.find('tbody').prepend(search);
+        var colspan       = table.find('thead th').size();
+        var searchEmpty   = $('<tr><td class="table-sort-search-empty" colspan='+colspan+'></td></tr>');
+        var search        = $('<div class="table-sort-search-container"><input class="table-sort-search-input" type="text" placeholder="Search..."></div>');
+        var searchInput   = search.find('.table-sort-search-input');
+        var tbody         = table.find('tbody');
+        var tbodyPosition = tbody.position();
+
+        search
+          .css('position','absolute')
+          .css('left',tbodyPosition.left)
+          .css('top',tbodyPosition.top);
+
+        tbody.prepend(searchEmpty);
+        table.parent().append(search);
+
+        // Make the empty cell the same height as the search element
+        if (typeof search.css('height') === 'string') {
+          searchEmpty.css('height',search.css('height'));
+        }
 
         searchInput.on('keyup',function () {
           filter({table: table,searchTerm: $(this).val()});
