@@ -196,8 +196,10 @@
             $('html').on('mousemove',function (e) {
               newMousePos = e.pageX-scrolltrack.offset().left;
               scrollPos   = newMousePos-initMousePos+initPos;
+              var scrollbarWidth = scrollbar.width();
+              var scrolltrackWidth = scrolltrack.width();
               if (scrollPos < 0) scrollPos = 0;
-              if (scrollPos+scrollbar.width() > scrolltrack.width()) scrollPos = scrolltrack.width()-scrollbar.width();
+              if (scrollPos+scrollbarWidth > scrolltrackWidth) scrollPos = scrolltrackWidth-scrollbarWidth;
               scrollActive(scrollPos);
             });
             userSelect(tableSortContainer,'none');
@@ -206,11 +208,6 @@
           $('html').on('mouseup',function () {
             $('html').off('mousemove');
             /* Store Old Scroll Value */
-            lastScroll = {
-              scrollPos: scrollPos,
-              scrollbarWidth: scrollbar.width(),
-              scrollTrackWidth: scrolltrack.width()
-            }
             userSelect(tableSortContainer,'all');
           });
         }
