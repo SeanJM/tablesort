@@ -64,6 +64,7 @@
         th.contents().replaceWith(sortField).end();
 
         userSelect(th,'none');
+        userSelect(sortField,'none');
       };
       // Generate a new clean row based on an array
       function newRow(arr) {
@@ -139,12 +140,14 @@
         return JSON.parse('{'+el.attr('style').replace(/;/g,',').replace(/,$/,'').replace(/(|-)\d+(%|px)|(|-)\d+\.\d+(px|%|)|\w+/g,function (m) {return '"'+m+'"'})+'}');
       }
       /* When the user initiates the scrolling */
-      function scrollActive(n) {
-        var scrollPos           = n;
-        var scrollbarTravel     = scrolltrack.width()-scrollbar.width();
-        var scrollPercentage    = scrollPos/scrollbarTravel;
-        var scrollbarPercentage = ((scrollbarTravel/scrolltrack.width()*scrollPercentage)*100);
-        var tablePercentage     = ((table.width()/tableSortContainer.width()-1)*100)*scrollPercentage;
+      function scrollActive(scrollPos) {
+        var scrolltrackWidth        = scrolltrack.width();
+        var scrollbarTravel         = scrolltrackWidth-scrollbar.width();
+        var tableWidth              = table.width();
+        var tableSortContainerWidth = tableSortContainer.width();
+        var scrollPercentage        = scrollPos/scrollbarTravel;
+        var scrollbarPercentage     = ((scrollbarTravel/scrolltrackWidth*scrollPercentage)*100);
+        var tablePercentage         = ((tableWidth/tableSortContainerWidth-1)*100)*scrollPercentage;
 
         table.css('left',(tablePercentage*-1)+'%');
         scrollbar.css('left',scrollbarPercentage+'%');
@@ -183,9 +186,7 @@
         function scrollWidth() {
           var tableWidth  = table.width();
           var parentWidth = tableParent.width();
-
-          scrollbarWidth = (parentWidth/tableWidth*100)+'%';
-          scrollbar.css('width',scrollbarWidth);
+          scrollbar.css('width',(parentWidth/tableWidth*100)+'%');
         }
 
         function scrollEvent() {
@@ -194,10 +195,10 @@
             initPos      = scrollbar.offset().left-scrolltrack.offset().left;
             initMousePos = e.pageX-scrolltrack.offset().left;
             $('html').on('mousemove',function (e) {
-              newMousePos = e.pageX-scrolltrack.offset().left;
-              scrollPos   = newMousePos-initMousePos+initPos;
-              var scrollbarWidth = scrollbar.width();
+              var scrollbarWidth   = scrollbar.width();
               var scrolltrackWidth = scrolltrack.width();
+              newMousePos          = e.pageX-scrolltrack.offset().left;
+              scrollPos            = newMousePos-initMousePos+initPos;
               if (scrollPos < 0) scrollPos = 0;
               if (scrollPos+scrollbarWidth > scrolltrackWidth) scrollPos = scrolltrackWidth-scrollbarWidth;
               scrollActive(scrollPos);
@@ -208,7 +209,7 @@
           $('html').on('mouseup',function () {
             $('html').off('mousemove');
             /* Store Old Scroll Value */
-            userSelect(tableSortContainer,'all');
+            userSelect(tableSortContainer,'');
           });
         }
 
