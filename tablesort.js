@@ -78,7 +78,6 @@
       function newBody(arg) {
         var body = $('<div></div>');
         for (var i=0;i<arg.sortArr.length;i++) {
-          console.log(arg.sortArr[i]);
           var tr = newRow(arg.rowArr[arg.sortArr[i]]);
           body.append(tr);
         };
@@ -164,13 +163,12 @@
           var percentage = parseFloat((parseFloat(scrollbarStyles.left)*scrolltrack.width())/100);
           if (!isNaN(percentage)) scrollActive(Math.round(percentage));
         }
-
       }
 
       function setUpScroll() {
         var tableWidth  = table.width();
         var parentWidth = tableParent.width();
-        var initMousePos,newMousePos;
+        var initPos,initMousePos,newMousePos,scrollPos;
 
         function wrapTable() {
           /* Puts the table into the tableSortContainer */
@@ -193,11 +191,11 @@
         function scrollEvent() {
           scrollbar.off('mousedown');
           scrolltrack.on('mousedown',function (e) {
-            var initPos = scrollPos || 0;
+            initPos      = scrollbar.offset().left-scrolltrack.offset().left;
             initMousePos = e.pageX-scrolltrack.offset().left;
             $('html').on('mousemove',function (e) {
               newMousePos = e.pageX-scrolltrack.offset().left;
-              scrollPos = newMousePos-initMousePos+initPos;
+              scrollPos   = newMousePos-initMousePos+initPos;
               if (scrollPos < 0) scrollPos = 0;
               if (scrollPos+scrollbar.width() > scrolltrack.width()) scrollPos = scrolltrack.width()-scrollbar.width();
               scrollActive(scrollPos);
