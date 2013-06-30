@@ -24,18 +24,22 @@
   Plugin.prototype = {
 
     init: function() {
-      var table = $(this.element)
-      this.setup(table);
-      this.search(table);
-      this.count(table);
+      var table              = $(this.element)
+      var tableSortContainer = $('<div class="table-sort-container"></div>');
+      this.setup(table,tableSortContainer);
+      this.search(table,tableSortContainer);
+      this.count(table,tableSortContainer);
     },
 
-    setup: function(table) {
-      var tableSortContainer = $('<div class="table-sort-container"></div>');
-      var scroll             = $('<div class="scrollbar-chrome"><div class="scrollbar-track"><div class="scrollbar-container"><div class="scrollbar"></div></div></div></div>');
-      var scrollbar          = scroll.find('.scrollbar-container');
-      var scrolltrack        = scroll.find('.scrollbar-track');
+    setup: function(table,tableSortContainer) {
+      var scroll             = $('<div class="scrollbar-chrome"></div>');
+      var scrollbar          = $('<div class="scrollbar-container"><div class="scrollbar"></div></div>');
+      var scrolltrack        = $('<div class="scrollbar-track"></div>');
+      var tableParent        = table.parent();
       var scrollbarWidth;
+      var oldScroll;
+      var scrollPos;
+
       // Make TH tags not selectable
       function userSelect(el,attr) {
         arr = ['webkit','moz','ms'];
@@ -132,71 +136,137 @@
           });
         });
       }
-      function scrollTable(scrollPos) {
-        var percentage = scrollPos/(scrolltrack.width()-scrollbar.width());
-        var difference = tableSortContainer.width()-table.width();
-        table.css('left',difference*percentage);
-        scrollbar.css('left',percentage*(scrolltrack.width()-scrollbar.width()));
+      function styleToJson(el) {
+        return JSON.parse('{'+el.attr('style').replace(/;/g,',').replace(/,$/,'').replace(/(|-)\d+(%|px)|(|-)\d+\.\d+(px|%|)|\w+/g,function (m) {return '"'+m+'"'})+'}');
       }
-      function setUpScroll() {
-        var width              = table.width();
-        var parentWidth        = table.parent().width();
-        var scrollPos,initMousePos,newMousePos;
+      /* When the user initiates the scrolling */
+      function scrollActive(n) {
+        var scrollPos           = n;
+        var scrollbarTravel     = scrolltrack.width()-scrollbar.width();
+        var scrollPercentage    = scrollPos/scrollbarTravel;
+        var scrollbarPercentage = ((scrollbarTravel/scrolltrack.width()*scrollPercentage)*100);
+        var tablePercentage     = ((table.width()/tableSortContainer.width()-1)*100)*scrollPercentage;
 
-        function scrollWidth() {
-          // Determine the width of the scrollbar
-          scrollbarWidth = parentWidth/width*scrolltrack.width();
-          scrollbar.css('width',scrollbarWidth+'px');
+        table.css('left',(tablePercentage*-1)+'%');
+        scrollbar.css('left',scrollbarPercentage+'%');
+      }
+      /* When the user causes changes to viewport scale which affect scrolling */
+      function scrollPassive() {
+        var scrollbarStyles = styleToJson(scrollbar);
+        var tableStyles     = styleToJson(table);
+
+        if ((parseFloat(scrollbarStyles.left)+parseFloat(scrollbarStyles.width)) > 100) {
+          var left            = (parseFloat(scrollbarStyles.left)+parseFloat(scrollbarStyles.width))-100;
+          var percentage      = (parseFloat(scrollbarStyles.left)-left);
+
+          scrollActive(Math.round((percentage*scrolltrack.width())/100));
+        } else {
+          var percentage = parseFloat((parseFloat(scrollbarStyles.left)*scrolltrack.width())/100);
+          if (!isNaN(percentage)) scrollActive(Math.round(percentage));
         }
 
+      }
 
-        function initScroll() {
-          var fun;
-          tableSortContainer.append(scroll);
-          table.css('position','relative').css('width',width+'px');
-          scrolltrack.css('position','relative');
-          scrollbar.css('position','absolute');
+      function setUpScroll() {
+        var tableWidth  = table.width();
+        var parentWidth = tableParent.width();
+        var initMousePos,newMousePos;
 
-          scrollWidth();
+        function wrapTable() {
+          /* Puts the table into the tableSortContainer */
+          tableSortContainer
+            .insertBefore(table)
+            .css('width',parentWidth+'px')
+            .css('overflow','hidden')
+            .css('position','relative');
+          table.appendTo(tableSortContainer);
+        }
 
+        function scrollWidth() {
+          var tableWidth  = table.width();
+          var parentWidth = tableParent.width();
+
+          scrollbarWidth = (parentWidth/tableWidth*100)+'%';
+          scrollbar.css('width',scrollbarWidth);
+        }
+
+        function scrollEvent() {
           scrollbar.off('mousedown');
           scrolltrack.on('mousedown',function (e) {
+            var initPos = scrollPos || 0;
             initMousePos = e.pageX-scrolltrack.offset().left;
             $('html').on('mousemove',function (e) {
               newMousePos = e.pageX-scrolltrack.offset().left;
-              scrollPos = newMousePos-initMousePos;
+              scrollPos = newMousePos-initMousePos+initPos;
               if (scrollPos < 0) scrollPos = 0;
               if (scrollPos+scrollbar.width() > scrolltrack.width()) scrollPos = scrolltrack.width()-scrollbar.width();
-              scrollTable(scrollPos);
+              scrollActive(scrollPos);
             });
             userSelect(tableSortContainer,'none');
           });
           $('html').off('mouseup');
           $('html').on('mouseup',function () {
             $('html').off('mousemove');
+            /* Store Old Scroll Value */
+            lastScroll = {
+              scrollPos: scrollPos,
+              scrollbarWidth: scrollbar.width(),
+              scrollTrackWidth: scrolltrack.width()
+            }
             userSelect(tableSortContainer,'all');
           });
         }
 
-        /* Puts the table into the tableSortContainer */
-        tableSortContainer
-          .insertBefore(table)
-          .css('width',parentWidth+'px')
-          .css('overflow','hidden')
-          .css('position','relative');
-        table.appendTo(tableSortContainer);
-
-        if (width > parentWidth) {
-          initScroll();
+        /* Build the scrollbar */
+        function scrollBuild() {
+          scrolltrack.append(scrollbar);
+          scroll.append(scrolltrack);
+          tableSortContainer.append(scroll);
         }
 
-        $(window).on('resize',function () {
-          tableSortContainer.css('width',tableSortContainer.parent().width()+'px');
-          scrollWidth();
-          var scrollbarPos = (scrollbar.css('left') === 'auto') ? -1 : parseInt(scrollbar.css('left'));
-          if (scrollbarPos >= 0) {
-            scrollTable(scrollbarPos);
+        function initScroll() {
+          var tableWidth  = table.width();
+          var parentWidth = tableParent.width();
+
+          function initTrue() {
+            var initiated = (tableSortContainer.find('.scrollbar-chrome').size() < 1);
+
+            if (initiated) {
+              scrollBuild();
+              table.css('width',tableWidth+'px');
+              scrolltrack.css('position','relative');
+              scrollbar.css('position','absolute');
+              scrollEvent();
+            } else if (!scroll.is(':visible')) {
+              scroll.show();
+            }
+
+            table.css('position','relative');
+            scrollWidth();
+            scrollPassive();
           }
+
+          function initFalse() {
+            scroll.hide();
+            table.css('width','100%').css('position','static');
+          }
+
+          if (tableWidth > parentWidth) {
+            initTrue();
+          } else {
+            initFalse();
+          }
+        }
+
+        wrapTable();
+        initScroll();
+
+        $(window).on('resize',function () {
+          var oldTableContainerWidth = tableSortContainer.css('width');
+          var newTableContainerWidth = tableSortContainer.parent().width();
+          var oldScrollWidth         = scrollbar.attr('style');
+          tableSortContainer.css('width',newTableContainerWidth+'px');
+          initScroll();
         });
       }
       // Go through each table heading and apply sorting if the heading is sortable
@@ -217,7 +287,7 @@
 
     },
 
-    search: function (table, options) {
+    search: function (table, tableSortContainer) {
       count = this.count; // Protect the namespace of this.count
       // Add highlighting around matched text
       function filter(options) {
@@ -264,16 +334,16 @@
 
         searchInput.on('keyup',function () {
           filter({table: table,searchTerm: $(this).val()});
-          count(table);
+          count(table,tableSortContainer);
         });
       }
     },
-    count: function (table, options) {
+    count: function (table,tableSortContainer) {
       table = $(table);
       if (!table.hasClass('table-sort-show-search-count')) return false;
       var tr              = table.find('tbody tr:gt(0)');
       var total           = tr.filter(':visible').size();
-      var searchContainer = table.find('.table-sort-search-container');
+      var searchContainer = tableSortContainer.find('.table-sort-search-container');
       var countBadge      = searchContainer.find('.table-sort-search-count');
 
       if (countBadge.size() < 1) {
