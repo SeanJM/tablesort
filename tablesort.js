@@ -194,6 +194,7 @@
           scrolltrack.on('mousedown',function (e) {
             initPos      = scrollbar.offset().left-scrolltrack.offset().left;
             initMousePos = e.pageX-scrolltrack.offset().left;
+            scroll.addClass('scrollbar-active');
             $('html').on('mousemove',function (e) {
               var scrollbarWidth   = scrollbar.width();
               var scrolltrackWidth = scrolltrack.width();
@@ -208,6 +209,7 @@
           $('html').off('mouseup');
           $('html').on('mouseup',function () {
             $('html').off('mousemove');
+            scroll.removeClass('scrollbar-active');
             /* Store Old Scroll Value */
             userSelect(tableSortContainer,'');
           });
@@ -218,6 +220,7 @@
           scrolltrack.append(scrollbar);
           scroll.append(scrolltrack);
           tableSortContainer.append(scroll);
+          scroll.css('position','relative');
         }
 
         function initScroll() {
@@ -291,8 +294,10 @@
         var match = new RegExp(options.searchTerm,'ig');
         tr.each(function () {
           var el = $(this);
+          var matchText = el.text().replace(/\n\s+/g,' ');
           el.find('.table-sort-highlight').contents().unwrap().end().remove();
-          if (match.test(el.text())) {
+          // Using match instead of test gets around a bug in Firefox
+          if (matchText.match(match) !== null) {
             el.find(':not(:has(*))').each(function () {
               var target = $(this);
               replaced   = target.html().replace(match,function (m,e) {
