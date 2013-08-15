@@ -316,7 +316,7 @@
 
         // Make the empty cell the same height as the search element
         if (typeof search.css('height') === 'string') {
-          searchEmpty.css('height',search.css('height'));
+          searchEmpty.css('height',search.outerHeight()); // outerHeight includes the padding of the search box
         }
 
         searchInput.on('keyup',function () {
