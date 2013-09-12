@@ -283,6 +283,12 @@
         clearTimeout(timer);
 
         var tr    = options.table.find('tbody tr:gt(0)');
+        if (options.searchTerm == '') {
+          // clear search
+          tr.show().find('.table-sort-highlight').contents().unwrap().end().remove();
+          return;
+        }
+
         var match = new RegExp(options.searchTerm,'ig');
         tr.each(function () {
           var el = $(this);
