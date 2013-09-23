@@ -19,10 +19,10 @@
     this._name     = pluginName;
 
     this.init();
+    this.timer = undefined;
   }
 
   Plugin.prototype = {
-
     init: function() {
       var table              = $(this.element)
       var tableSortContainer = $('<div class="table-sort-container"></div>');
@@ -273,10 +273,22 @@
     },
 
     search: function (table, tableSortContainer) {
+      timer = this.timer;
       count = this.count; // Protect the namespace of this.count
+
+      table.trigger('beforesearch', [table]);
+
       // Add highlighting around matched text
       function filter(options) {
+        clearTimeout(timer);
+
         var tr    = options.table.find('tbody tr:gt(0)');
+        if (options.searchTerm == '') {
+          // clear search
+          tr.show().find('.table-sort-highlight').contents().unwrap().end().remove();
+          return;
+        }
+
         var match = new RegExp(options.searchTerm,'ig');
         tr.each(function () {
           var el = $(this);
@@ -296,6 +308,12 @@
             el.hide();
           }
         });
+
+        var count = table.find('tbody tr:gt(0)').filter(':visible').size();
+        timer = setTimeout(function (){
+          table.trigger('match', [table, count]);
+        }, 1000);
+        
       }
       table = $(table);
       if (table.hasClass('table-sort-search')) {
